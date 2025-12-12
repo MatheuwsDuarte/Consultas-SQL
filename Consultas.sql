@@ -1,85 +1,5 @@
 USE energia;
 
-select * from tb_uf;
-select * from tb_cliente;
-select * from tb_gerador;
-select * from tb_registro_geracao;
-
--- Qual foi o cliente que gerou a maior quantidade de energia entre os dias 01 e 10 de janeiro de 2024?
-SELECT 
-    c.nome_cliente, SUM(rg.geracao_energia_kWh) AS total_gerado -- nome do cliente e soma de toda energia gerada
-FROM
-    tb_registro_geracao rg
-        JOIN -- usar o join para ligar as tabelas
-    tb_gerador g ON rg.id_gerador = g.id_gerador
-        JOIN
-    tb_cliente c ON g.id_cliente = c.id_cliente
-WHERE
-    rg.data_registro BETWEEN '2024-01-01' AND '2024-01-10'
-GROUP BY c.nome_cliente -- agrupar os resultados para cada cliente
-ORDER BY total_gerado DESC -- ordenar lista do maior para o menor (DESC)
-LIMIT 1; -- pegar apenas o primeiro da lista
-
--- Qual gerador do cliente "Libero Corp." que mais contribuiu para a geração de energia em janeiro?
-SELECT 
-	g.nome_gerador, SUM(rg.geracao_energia_kWh) AS total_gerado -- nome do gerador e somar a energia produzida para comparar depois
-FROM
-	tb_gerador g
-JOIN
-	tb_cliente c ON g.id_cliente = c.id_cliente
-JOIN
-	tb_registro_geracao rg ON g.id_gerador = rg.id_gerador
-WHERE 
-	c.nome_cliente = 'Libero Corp.' -- apenas os geradores da LiberoCorp
-    AND rg.data_registro BETWEEN '2024-01-01' AND '2024-01-31'
-GROUP BY
-	g.nome_gerador
-ORDER BY 
-	total_gerado DESC
-LIMIT 1;
-
--- Há algum gerador que não gerou energia em janeiro de 2024?
-SELECT
-	g.nome_gerador, c.nome_cliente
-FROM
-	tb_gerador g -- tabela principal e o lado esquerdo do left join
-JOIN
-	tb_cliente c ON g.id_cliente = c.id_cliente
-LEFT JOIN -- consultar todos os geradores, se nao tiver registro preencher com null
-	tb_registro_geracao rg
-	ON g.id_gerador = rg.id_gerador 
-    AND rg.data_registro BETWEEN '2024-01-01' AND '2024-01-31' -- tenta encontrar os registros de janeiro e se nao achar deixar null
-WHERE
-	rg.id_registro IS NULL; -- mostrar onde nao encontrou registro de geração
-
-
--- Qual é a geração média diária para cada gerador de clientes que estão no estado do Paraná (PR)?
-SELECT 
-	g.nome_gerador, c.nome_cliente, ROUND(AVG(rg.geracao_energia_kWh), 2) AS media_diaria_kwh -- usei AVG para calcular a média dos registros do gerador, usei o ROUND para arredondar em 2 casas decimais
-FROM
-	tb_registro_geracao rg
-JOIN
-	tb_gerador g ON rg.id_gerador = g.id_gerador
-JOIN
-	tb_cliente c ON g.id_cliente = c.id_cliente
-JOIN
-	tb_uf u ON c.id_uf = u.id_uf
-WHERE
-	u.uf = 'PR' -- filtrando pela sigla
-GROUP BY
-	g.nome_gerador, c.nome_cliente;
-
--- Considerando a geração total de energia para todos os clientes, qual foi o dia de pico de geração? 
-SELECT
-	data_registro, SUM(geracao_energia_kWh) AS total_gerado_no_dia -- somar tudo as linhas das datas 
-FROM
-	tb_registro_geracao
-GROUP BY
-	data_registro -- cria uma linha para cada dia diferente encontrado
-ORDER BY
-	total_gerado_no_dia DESC
-LIMIT 1;
-
 -- Tabela: tb_uf
 CREATE TABLE tb_uf (
     id_uf INT NOT NULL,
@@ -397,4 +317,86 @@ VALUES
   (236, 4, '2024-01-30', 9000),
   (237, 5, '2024-01-30', 11000),
   (238, 6, '2024-01-30', 7000);
+
+select * from tb_uf;
+select * from tb_cliente;
+select * from tb_gerador;
+select * from tb_registro_geracao;
+
+-- Qual foi o cliente que gerou a maior quantidade de energia entre os dias 01 e 10 de janeiro de 2024?
+SELECT 
+    c.nome_cliente, SUM(rg.geracao_energia_kWh) AS total_gerado -- nome do cliente e soma de toda energia gerada
+FROM
+    tb_registro_geracao rg
+        JOIN -- usar o join para ligar as tabelas
+    tb_gerador g ON rg.id_gerador = g.id_gerador
+        JOIN
+    tb_cliente c ON g.id_cliente = c.id_cliente
+WHERE
+    rg.data_registro BETWEEN '2024-01-01' AND '2024-01-10'
+GROUP BY c.nome_cliente -- agrupar os resultados para cada cliente
+ORDER BY total_gerado DESC -- ordenar lista do maior para o menor (DESC)
+LIMIT 1; -- pegar apenas o primeiro da lista
+
+-- Qual gerador do cliente "Libero Corp." que mais contribuiu para a geração de energia em janeiro?
+SELECT 
+	g.nome_gerador, SUM(rg.geracao_energia_kWh) AS total_gerado -- nome do gerador e somar a energia produzida para comparar depois
+FROM
+	tb_gerador g
+JOIN
+	tb_cliente c ON g.id_cliente = c.id_cliente
+JOIN
+	tb_registro_geracao rg ON g.id_gerador = rg.id_gerador
+WHERE 
+	c.nome_cliente = 'Libero Corp.' -- apenas os geradores da LiberoCorp
+    AND rg.data_registro BETWEEN '2024-01-01' AND '2024-01-31'
+GROUP BY
+	g.nome_gerador
+ORDER BY 
+	total_gerado DESC
+LIMIT 1;
+
+-- Há algum gerador que não gerou energia em janeiro de 2024?
+SELECT
+	g.nome_gerador, c.nome_cliente
+FROM
+	tb_gerador g -- tabela principal e o lado esquerdo do left join
+JOIN
+	tb_cliente c ON g.id_cliente = c.id_cliente
+LEFT JOIN -- consultar todos os geradores, se nao tiver registro preencher com null
+	tb_registro_geracao rg
+	ON g.id_gerador = rg.id_gerador 
+    AND rg.data_registro BETWEEN '2024-01-01' AND '2024-01-31' -- tenta encontrar os registros de janeiro e se nao achar deixar null
+WHERE
+	rg.id_registro IS NULL; -- mostrar onde nao encontrou registro de geração
+
+
+-- Qual é a geração média diária para cada gerador de clientes que estão no estado do Paraná (PR)?
+SELECT 
+	g.nome_gerador, c.nome_cliente, ROUND(AVG(rg.geracao_energia_kWh), 2) AS media_diaria_kwh -- usei AVG para calcular a média dos registros do gerador, usei o ROUND para arredondar em 2 casas decimais
+FROM
+	tb_registro_geracao rg
+JOIN
+	tb_gerador g ON rg.id_gerador = g.id_gerador
+JOIN
+	tb_cliente c ON g.id_cliente = c.id_cliente
+JOIN
+	tb_uf u ON c.id_uf = u.id_uf
+WHERE
+	u.uf = 'PR' -- filtrando pela sigla
+GROUP BY
+	g.nome_gerador, c.nome_cliente;
+
+-- Considerando a geração total de energia para todos os clientes, qual foi o dia de pico de geração? 
+SELECT
+	data_registro, SUM(geracao_energia_kWh) AS total_gerado_no_dia -- somar tudo as linhas das datas 
+FROM
+	tb_registro_geracao
+GROUP BY
+	data_registro -- cria uma linha para cada dia diferente encontrado
+ORDER BY
+	total_gerado_no_dia DESC
+LIMIT 1;
+
+
 
